@@ -1,0 +1,530 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "http://example.com/example.json",
+    "type": "object",
+    "title": "Light Box Configuration",
+    "description": "This file contains all the configuration for the program including users, reminders, pins and holidays",
+    "default": {},
+    "required": [
+        "users"
+    ],
+    "properties": {
+        "tts-lan": {
+            "$id": "#/properties/users/items/anyOf/0/properties/tts-lan",
+            "type": "string",
+            "title": "TTS Language",
+            "description": "The langage used by the TTS Library",
+            "default": "",
+            "examples": [
+                "en-us",
+                "en-au"
+            ]
+        },
+        "holiday-seasons": {
+            "$id": "#/properties/holiday-seasons",
+            "type": "array",
+            "title": "Contains Definitions for Holidays that span more than one day",
+            "description": "Use this to define inter term breaks and holidays",
+            "default": [],
+            "examples": [
+                [
+                    {
+                        "name": "Winter Holidays",
+                        "start-date": "30/6",
+                        "end-date": "15/7"
+                    }
+                ]
+            ],
+            "additionalItems": true,
+            "items": {
+                "$id": "#/properties/holiday-seasons/items",
+                "anyOf": [
+                    {
+                        "$id": "#/properties/holiday-seasons/items/anyOf/0",
+                        "type": "object",
+                        "title": "Holiday Season Definitions",
+                        "description": "These are the definitions for all holiday seasons and inter term breaks",
+                        "default": {},
+                        "examples": [
+                            {
+                                "name": "Winter Holidays",
+                                "start-date": "30/6",
+                                "end-date": "15/7"
+                            }
+                        ],
+                        "required": [
+                            "start-date",
+                            "end-date"
+                        ],
+                        "properties": {
+                            "name": {
+                                "$id": "#/properties/holiday-seasons/items/anyOf/0/properties/name",
+                                "type": "string",
+                                "title": "Name of the holiday",
+                                "description": "Friendly name for the holiday, used in logging",
+                                "default": "",
+                                "examples": [
+                                    "Winter Holidays", "Summer Holidays", "Spring Break"
+                                ]
+                            },
+                            "start-date": {
+                                "$id": "#/properties/holiday-seasons/items/anyOf/0/properties/start-date",
+                                "type": "string",
+                                "title": "Starting Date",
+                                "description": "The date on which the holiday starts",
+                                "default": "",
+                                "examples": [
+                                    "30/6"
+                                ],
+                                "pattern": "^(?:(?:31\/(?:0?[13578]|1[02]))|(?:(?:30\/(?:0?[1,3-9]|1[0-2])))|(?:[0-2]?[0-9]\/(?:0?[1-9]|1[0-2])))$"
+                            },
+                            "end-date": {
+                                "$id": "#/properties/holiday-seasons/items/anyOf/0/properties/end-date",
+                                "type": "string",
+                                "title": "Ending Date",
+                                "description": "The date on which the holiday ends",
+                                "default": "",
+                                "examples": [
+                                    "15/7"
+                                ],
+                                "pattern": "^(?:(?:31\/(?:0?[13578]|1[02]))|(?:(?:30\/(?:0?[1,3-9]|1[0-2])))|(?:[0-2]?[0-9]\/(?:0?[1-9]|1[0-2])))$"
+                            }
+                        },
+                        "additionalProperties": true
+                    }
+                ]
+            }
+        },
+        "public-holidays": {
+            "$id": "#/properties/public-holidays",
+            "type": "array",
+            "title": "Single Day Holidays",
+            "description": "Define any \"days off\" that you have this year here (Public holidays, Queen's birthday etc.)",
+            "default": [],
+            "examples": [
+                [
+                    {
+                        "name": "Christmas Day",
+                        "date": "25/12"
+                    }
+                ]
+            ],
+            "additionalItems": true,
+            "items": {
+                "$id": "#/properties/public-holidays/items",
+                "anyOf": [
+                    {
+                        "$id": "#/properties/public-holidays/items/anyOf/0",
+                        "type": "object",
+                        "title": "Public Holidays",
+                        "description": "A Public Holiday Definition",
+                        "default": {},
+                        "examples": [
+                            {
+                                "name": "Christmas Day",
+                                "date": "25/12"
+                            }
+                        ],
+                        "required": [
+                            "date"
+                        ],
+                        "properties": {
+                            "name": {
+                                "$id": "#/properties/public-holidays/items/anyOf/0/properties/name",
+                                "type": "string",
+                                "title": "Holiday Name",
+                                "description": "Friendly Name for the public holiday (used in logging)",
+                                "default": "",
+                                "examples": [
+                                    "Christmas Day"
+                                ]
+                            },
+                            "date": {
+                                "$id": "#/properties/public-holidays/items/anyOf/0/properties/date",
+                                "type": "string",
+                                "title": "Holiday Date",
+                                "description": "The date on which the holiday occurs",
+                                "default": "",
+                                "examples": [
+                                    "25/12"
+                                ],
+                                "pattern": "^(?:(?:31\/(?:0?[13578]|1[02]))|(?:(?:30\/(?:0?[1,3-9]|1[0-2])))|(?:[0-2]?[0-9]\/(?:0?[1-9]|1[0-2])))$"
+                            }
+                        },
+                        "additionalProperties": true
+                    }
+                ]
+            }
+        },
+        "users": {
+            "$id": "#/properties/users",
+            "type": "array",
+            "title": "User List",
+            "description": "List of all the \"users\" on this box and their reminders. Each user gets one button and all their reminders use that button",
+            "default": [],
+            "examples": [
+                [
+                    {
+                        "name": "Ben",
+                        "reminders": [
+                            {
+                                "label": "Morning-B",
+                                "vocal-reminder": "Ben, Morning Tablet",
+                                "light-on": "07:20",
+                                "grace-period": 5
+                            },
+                            {
+                                "label": "Night-B",
+                                "vocal-reminder": "Ben, Night Tablet",
+                                "light-on": "19:20",
+                                "grace-period": 5
+                            }
+                        ],
+                        "reminders-h": [
+                            {
+                                "label": "H-Morning-B",
+                                "vocal-reminder": "Ben, Morning Tablet",
+                                "light-on": "09:20",
+                                "grace-period": 5
+                            },
+                            {
+                                "label": "H-Night-B",
+                                "vocal-reminder": "Ben, Night Tablet",
+                                "light-on": "19:20",
+                                "grace-period": 5
+                            }
+                        ],
+                        "pins": {
+                            "button": 4,
+                            "led": 18
+                        }
+                    },
+                    {
+                        "name": "Lachie",
+                        "reminders": [
+                            {
+                                "label": "Morning-L",
+                                "vocal-reminder": "Lachie, Morning Tablet",
+                                "light-on": "07:20",
+                                "grace-period": 5
+                            },
+                            {
+                                "label": "Night-L",
+                                "vocal-reminder": "Lachie, Night Tablet",
+                                "light-on": "19:20",
+                                "grace-period": 5
+                            }
+                        ],
+                        "reminders-h": [
+                            {
+                                "label": "H-Morning-L",
+                                "vocal-reminder": "Lachie, Morning Tablet",
+                                "light-on": "09:20",
+                                "grace-period": 5
+                            },
+                            {
+                                "label": "H-Night-L",
+                                "vocal-reminder": "Lachie, Night Tablet",
+                                "light-on": "19:20",
+                                "grace-period": 5
+                            }
+                        ],
+                        "pins": {
+                            "button": 17,
+                            "led": 23
+                        }
+                    }
+                ]
+            ],
+            "additionalItems": true,
+            "items": {
+                "$id": "#/properties/users/items",
+                "anyOf": [
+                    {
+                        "$id": "#/properties/users/items/anyOf/0",
+                        "type": "object",
+                        "title": "User Definition",
+                        "description": "A user in this box (represented by one button)",
+                        "default": {},
+                        "examples": [
+                            {
+                                "name": "Ben",
+                                "reminders": [
+                                    {
+                                        "label": "Morning-B",
+                                        "vocal-reminder": "Ben, Morning Tablet",
+                                        "light-on": "07:20",
+                                        "grace-period": 5
+                                    },
+                                    {
+                                        "label": "Night-B",
+                                        "vocal-reminder": "Ben, Night Tablet",
+                                        "light-on": "19:20",
+                                        "grace-period": 5
+                                    }
+                                ],
+                                "reminders-h": [
+                                    {
+                                        "label": "H-Morning-B",
+                                        "vocal-reminder": "Ben, Morning Tablet",
+                                        "light-on": "09:20",
+                                        "grace-period": 5
+                                    },
+                                    {
+                                        "label": "H-Night-B",
+                                        "vocal-reminder": "Ben, Night Tablet",
+                                        "light-on": "19:20",
+                                        "grace-period": 5
+                                    }
+                                ],
+                                "pins": {
+                                    "button": 4,
+                                    "led": 18
+                                }
+                            }
+                        ],
+                        "required": [
+                            "name",
+                            "reminders",
+                            "reminders-h",
+                            "pins"
+                        ],
+                        "properties": {
+                            "name": {
+                                "$id": "#/properties/users/items/anyOf/0/properties/name",
+                                "type": "string",
+                                "title": "User Name",
+                                "description": "The name of the user or purpose of the button",
+                                "default": "",
+                                "examples": [
+                                    "Ben"
+                                ]
+                            },
+                            "reminders": {
+                                "$id": "#/properties/users/items/anyOf/0/properties/reminders",
+                                "type": "array",
+                                "title": "Reminders",
+                                "description": "The reminders used during work days",
+                                "default": [],
+                                "examples": [
+                                    [
+                                        {
+                                            "label": "Morning-B",
+                                            "vocal-reminder": "Ben, Morning Tablet",
+                                            "light-on": "07:20",
+                                            "grace-period": 5
+                                        },
+                                        {
+                                            "label": "Night-B",
+                                            "vocal-reminder": "Ben, Night Tablet",
+                                            "light-on": "19:20",
+                                            "grace-period": 5
+                                        }
+                                    ]
+                                ],
+                                "additionalItems": true,
+                                "items": {
+                                    "$id": "#/properties/users/items/anyOf/0/properties/reminders/items",
+                                    "anyOf": [
+                                        {
+                                            "$id": "#/properties/users/items/anyOf/0/properties/reminders/items/anyOf/0",
+                                            "type": "object",
+                                            "title": "Reminder",
+                                            "description": "An reminder that activates at a given time",
+                                            "default": {},
+                                            "examples": [
+                                                {
+                                                    "label": "Morning-B",
+                                                    "vocal-reminder": "Ben, Morning Tablet",
+                                                    "light-on": "07:20",
+                                                    "grace-period": 5
+                                                }
+                                            ],
+                                            "required": [
+                                                "label",
+                                                "light-on",
+                                                "grace-period"
+                                            ],
+                                            "properties": {
+                                                "label": {
+                                                    "$id": "#/properties/users/items/anyOf/0/properties/reminders/items/anyOf/0/properties/label",
+                                                    "type": "string",
+                                                    "title": "Reminder Label",
+                                                    "description": "The friendly name of this reminder, It is probably a good idea to establish a standard naming scheme for these (See example configuration)",
+                                                    "default": "",
+                                                    "examples": [
+                                                        "Morning-B"
+                                                    ]
+                                                },
+                                                "vocal-reminder": {
+                                                    "$id": "#/properties/users/items/anyOf/0/properties/reminders/items/anyOf/0/properties/vocal-name",
+                                                    "type": "string",
+                                                    "title": "Vocal Reminder",
+                                                    "description": "Override for the words said through tts when this reminder is active (if nothing will default to the label)",
+                                                    "default": "",
+                                                    "examples": [
+                                                        "Ben, Morning Tablet"
+                                                    ]
+                                                },
+                                                "light-on": {
+                                                    "$id": "#/properties/users/items/anyOf/0/properties/reminders/items/anyOf/0/properties/light-on",
+                                                    "type": "string",
+                                                    "title": "Light-On Time",
+                                                    "description": "What time the reminder should be initialised.\nA good time would be the earliest time you can see yourself satisfying the reminder\nTime should be given in format: HH:MM",
+                                                    "default": "00:00",
+                                                    "pattern": "^([01]?[0-9]|2[0-3]):[0-5][0-9]$"
+                                                },
+                                                "grace-period": {
+                                                    "$id": "#/properties/users/items/anyOf/0/properties/reminders/items/anyOf/0/properties/grace-period",
+                                                    "type": "integer",
+                                                    "title": "Grace Period",
+                                                    "description": "How long to wait for completion before playing sounds (N.Y.I)",
+                                                    "default": 5,
+                                                    "examples": [
+                                                        5
+                                                    ],
+                                                    "minimum": 0
+                                                }
+                                            },
+                                            "additionalProperties": true
+                                        }
+                                    ]
+                                }
+                            },
+                            "reminders-h": {
+                                "$id": "#/properties/users/items/anyOf/0/properties/reminders-h",
+                                "type": "array",
+                                "title": "Reminders",
+                                "description": "The reminders used during holidays",
+                                "default": [],
+                                "examples": [
+                                    [
+                                        {
+                                            "label": "H-Morning-B",
+                                            "light-on": "07:20",
+                                            "grace-period": 5
+                                        },
+                                        {
+                                            "label": "H-Night-B",
+                                            "light-on": "19:20",
+                                            "grace-period": 5
+                                        }
+                                    ]
+                                ],
+                                "additionalItems": true,
+                                "items": {
+                                    "$id": "#/properties/users/items/anyOf/0/properties/reminders-h/items",
+                                    "anyOf": [
+                                        {
+                                            "$id": "#/properties/users/items/anyOf/0/properties/reminders-h/items/anyOf/0",
+                                            "type": "object",
+                                            "title": "Reminder",
+                                            "description": "An reminder that activates at a given time",
+                                            "default": {},
+                                            "examples": [
+                                                {
+                                                    "label": "H-Morning-B",
+                                                    "light-on": "07:20",
+                                                    "grace-period": 5
+                                                }
+                                            ],
+                                            "required": [
+                                                "label",
+                                                "light-on",
+                                                "grace-period"
+                                            ],
+                                            "properties": {
+                                                "label": {
+                                                    "$id": "#/properties/users/items/anyOf/0/properties/reminders-h/items/anyOf/0/properties/label",
+                                                    "type": "string",
+                                                    "title": "Reminder Label",
+                                                    "description": "The friendly name of this reminder, It is probably a good idea to establish a standard naming scheme for these (See example configuration)",
+                                                    "default": "",
+                                                    "examples": [
+                                                        "H-Morning-B"
+                                                    ]
+                                                },
+                                                "vocal-reminder": {
+                                                    "$id": "#/properties/users/items/anyOf/0/properties/reminders/items/anyOf/0/properties/vocal-name",
+                                                    "type": "string",
+                                                    "title": "Vocal Reminder",
+                                                    "description": "Override for the words said through tts when this reminder is active (if nothing will default to the label)",
+                                                    "default": "",
+                                                    "examples": [
+                                                        "Ben, Morning Tablet"
+                                                    ]
+                                                },
+                                                "light-on": {
+                                                    "$id": "#/properties/users/items/anyOf/0/properties/reminders-h/items/anyOf/0/properties/light-on",
+                                                    "type": "string",
+                                                    "title": "Light-On Time",
+                                                    "description": "What time the reminder should be initialised.\nA good time would be the earliest time you can see yourself satisfying the reminder\nTime should be given in format: HH:MM",
+                                                    "default": "00:00",
+                                                    "pattern": "^([01]?[0-9]|2[0-3]):[0-5][0-9]$"
+                                                },
+                                                "grace-period": {
+                                                    "$id": "#/properties/users/items/anyOf/0/properties/reminders-h/items/anyOf/0/properties/grace-period",
+                                                    "type": "integer",
+                                                    "title": "Grace Period",
+                                                    "description": "How long to wait for completion before playing sounds (N.Y.I)",
+                                                    "default": 5,
+                                                    "examples": [
+                                                        5
+                                                    ],
+                                                    "minimum": 0
+                                                }
+                                            },
+                                            "additionalProperties": true
+                                        }
+                                    ]
+                                }
+                            },
+                            "pins": {
+                                "$id": "#/properties/users/items/anyOf/0/properties/pins",
+                                "type": "object",
+                                "title": "User Pins",
+                                "description": "The GPIO pins associated with the user's button (BCM notation)",
+                                "default": {},
+                                "examples": [
+                                    {
+                                        "button": 4,
+                                        "led": 18
+                                    }
+                                ],
+                                "required": [
+                                    "button",
+                                    "led"
+                                ],
+                                "properties": {
+                                    "button": {
+                                        "$id": "#/properties/users/items/anyOf/0/properties/pins/properties/button",
+                                        "type": "integer",
+                                        "title": "Button Pin",
+                                        "description": "The input pin associated with the button (BCM notation)",
+                                        "examples": [
+                                            4
+                                        ],
+                                        "pattern": "^([0-9]|1[0-9]|2[0-8])$"
+                                    },
+                                    "led": {
+                                        "$id": "#/properties/users/items/anyOf/0/properties/pins/properties/led",
+                                        "type": "integer",
+                                        "title": "LED Pin",
+                                        "description": "The output pin associated with the LED on the button",
+                                        "examples": [
+                                            18
+                                        ],
+                                        "pattern": "^([0-9]|1[0-9]|2[0-8])$"
+                                    }
+                                },
+                                "additionalProperties": true
+                            }
+                        },
+                        "additionalProperties": true
+                    }
+                ]
+            }
+        }
+    },
+    "additionalProperties": true
+}

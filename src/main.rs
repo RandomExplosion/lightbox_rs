@@ -1,18 +1,18 @@
-use std::fs;
-use serde_json;
 use chrono::prelude::*;
 use std::env;
-use log::{info, trace, warn, error};
 use pretty_env_logger;
 use std::process::Command;
 use std::sync::mpsc;
 use std::thread;
 use chrono::prelude::*;
 use std::thread::sleep;
+use std::fs;
 
 mod conf;
 mod user_reminder_handler;
 mod reminder_howler;
+
+#[macro_use] extern crate log;
 
 fn main() {
     
@@ -22,14 +22,6 @@ fn main() {
     //Begin Log
     info!("HOST: Starting lightbox version {}", env!("CARGO_PKG_VERSION"));
 
-    info!("HOST: Loading configuration file.");
-    //Load Configuration as a string
-    let config_data = fs::read_to_string("Config.json").expect("No Config.json present!");
-    //Convert to typed struct assemblage
-    let mut config_data: conf::Configuration = serde_json::from_str(&config_data).expect("Invalid json!");
-    //Validate configuration and correct if necessary
-    conf::validate_config(&mut config_data);
-    info!("HOST: Configuration Loaded Successfully!");
 
     loop {
 
@@ -42,12 +34,12 @@ fn main() {
 
         //while true {
         //Check if today is a holiday and remember that
-        let is_h = is_holiday(&mut config_data);
+        let is_h = is_holiday();
         
         //Start Howler with message link for reminder_handler --> howler communication
         let (tx_reminder_handler_sender, rx_howler_listener) = mpsc::channel();
-        let howl_interval = config_data.howler_interval;
-        let user_count: usize = config_data.users.len().into();
+        let howl_interval = conf::CONFIG.howler_interval;
+        let user_count: usize = conf::CONFIG.users.len().into();
         thread::spawn(move || {
             reminder_howler::start_howler(rx_howler_listener, howl_interval, user_count);
         });
@@ -55,7 +47,7 @@ fn main() {
         let mut i = 0;
 
         //TODO: Run tts conversions for today's reminders WITHIN RUST
-        for mut user in &mut config_data.users {
+        for mut user in &conf::CONFIG.users {
 
             //Declare binding for today's reminders
             let reminders_today;
@@ -67,7 +59,7 @@ fn main() {
             for reminder in reminders_today {
                 //TODO: CONVERT USING RUST
                 //NOTE: This is a janky workaround using python because I can't get any of the rust bindings to work on ARM64 for the time being
-                Command::new("sh").args(&["python3", &config_data.tts_lan, 
+                Command::new("sh").args(&["python3", &conf::CONFIG.tts_lan, 
                     //Use vocal_reminder if present, fall back to label if not
                     match &reminder.vocal_reminder {
                         Some(p) => p,
@@ -80,7 +72,7 @@ fn main() {
             //TODO: Launch worker thread
             let this_tx_reminder_handler = tx_reminder_handler_sender.clone();
             thread::spawn(move | | {
-                user_reminder_handler::start(i, &mut user, is_h, this_tx_reminder_handler);
+                user_reminder_handler::start(i, is_h, this_tx_reminder_handler);
             });
 
             i = i+1;
@@ -98,7 +90,7 @@ fn main() {
 }
 
 //Figure out if today is a holiday
-fn is_holiday(config: &mut conf::Configuration) -> bool {
+fn is_holiday() -> bool {
 
     //Get current date and time
     let now = Local::now();
@@ -110,17 +102,17 @@ fn is_holiday(config: &mut conf::Configuration) -> bool {
     }
 
     //Is today a public holiday
-    if config.public_holidays.iter().any(|day| &day.date == &now.format("%d/%m").to_string()) {
+    if conf::CONFIG.public_holidays.iter().any(|day| &day.date == &now.format("%d/%m").to_string()) {
         info!("Today is a public holiday!\nUsing holiday reminders.");
     }
     //Or More readably:
-    // for day in config.public_holidays {
+    // for day in conf::CONFIG.public_holidays {
     //     if now.format("%d/%m").to_string() == day.date {
     //         info!("Today is {}!\nUsing holiday reminders", day.name);
     //     }
     // }
 
-    for holiday in &mut config.holiday_seasons {
+    for holiday in &conf::CONFIG.holiday_seasons {
         //Parse start and end dates from strings to NaiveDates for comparison;
         let start_date = NaiveDate::parse_from_str(&holiday.start_date, "%d/%m/%Y").unwrap();
         let end_date = NaiveDate::parse_from_str(&holiday.end_date, "%d/%m/%Y").unwrap();

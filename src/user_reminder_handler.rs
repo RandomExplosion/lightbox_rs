@@ -2,7 +2,6 @@ use std;
 use std::sync::mpsc;
 use chrono::prelude::*;
 use std::thread::sleep;
-use log::{info, trace, warn, error};
 use rust_gpiozero::*;
 use super::reminder_howler::HowlerUpdatePacket;
 use super::conf;
@@ -12,8 +11,11 @@ This file contains the code run on the threads dedicated to each user.
 It handles the leds
 */
 
-pub fn start (user_id: u8, user: &mut conf::User, holiday: bool, tx_howler: mpsc::Sender<HowlerUpdatePacket>)
+pub fn start (user_id: u8, holiday: bool, tx_howler: mpsc::Sender<HowlerUpdatePacket>)
 {
+
+    let user = &conf::CONFIG.users[user_id as usize];
+
     //Get reminders depending on whether today is a holiday
     let reminders;
 
@@ -39,12 +41,9 @@ pub fn start (user_id: u8, user: &mut conf::User, holiday: bool, tx_howler: mpsc
     });
 
     //Use holiday reminders if it is a holiday otherwise use normal reminders
-    if holiday { reminders = &mut user.reminders_h; } else { reminders = &mut user.reminders }
+    if holiday { reminders = &user.reminders_h; } else { reminders = &user.reminders }
 
-    //Sort the reminders by their time
-    reminders.sort_by_key(|rem| &rem.light_on);
-
-    //Loop through reminders
+    //Loop through reminders (they will already be sorted by their time)
     for rem in reminders {
         let rem_time = NaiveTime::parse_from_str(&rem.light_on, "%H:%M").unwrap();
         let now = Local::now().time();

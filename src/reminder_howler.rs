@@ -4,9 +4,9 @@ use super::conf::Configuration;
 use rodio::Sink;
 use std::fs::File;
 use std::io::BufReader;
-use log::{info, trace, warn, error};
 use pretty_env_logger;
 use std::thread::sleep;
+use Default;
 
 //Packet task enum (see HowlerUpdatePacket) for purpose
 #[derive(PartialEq)]
@@ -29,6 +29,7 @@ pub struct HowlerUpdatePacket {
 }
 
 //Struct to store the active reminder for a user and whether sound should be played or not
+#[derive(Default, Clone)]
 pub struct UserActiveReminder {
     reminder_label: String,
     audio_active: bool,
@@ -45,7 +46,7 @@ pub fn start_howler (rx_reminder_updates: mpsc::Receiver<HowlerUpdatePacket>, ho
     info!("HOWLER: Starting Playback Loop with interim delay of {}s", howl_interval);
 
     //Create a vector to store the active reminders for each user
-    let mut active_reminders: &mut Vec<UserActiveReminder> = &mut Vec::with_capacity(user_count);
+    let mut active_reminders: Vec<UserActiveReminder> = vec![Default::default(); user_count];
 
     //Runtime Loop
     loop {
@@ -54,17 +55,9 @@ pub fn start_howler (rx_reminder_updates: mpsc::Receiver<HowlerUpdatePacket>, ho
 
         //Process packets
         for update in update_iter {
-            let mut user_rem = &mut active_reminders[update.user_id as usize];
-            match update.job {
-                //If job is "Set" update the user's active reminder id and disable audio
-                UpdateCommand::Set => {
-                    user_rem.reminder_label = update.reminder_label;
-                    user_rem.audio_active = false;
-                },
-                //If job is "Enable" and the reminder id in the packet matches the user's active reminder, enable audio
-                UpdateCommand::Enable => {
-                    user_rem.audio_active = true;
-                },
+            active_reminders[update.user_id as usize] = match update.job {
+                UpdateCommand::Set => UserActiveReminder { reminder_label: update.reminder_label, audio_active: false },
+                UpdateCommand::Enable => UserActiveReminder { reminder_label: active_reminders[update.user_id as usize].reminder_label.clone(), audio_active: true }
             }
         }
 

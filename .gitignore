@@ -1,3 +1,6 @@
+#Ignore Builds
 /target
-#configuration file
+#Ignore Testing Config File
 Config.json
+#Ignore ReminderSounds
+/remindersounds

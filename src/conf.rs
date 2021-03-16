@@ -2,7 +2,6 @@ use chrono::prelude::*;
 use lazy_static::lazy_static;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
-use serde_json;
 use std::fs;
 use std::sync::Arc;
 
@@ -112,18 +111,18 @@ impl Configuration {
         //Correct dates for holidays that start before they end
         for holidayseason in &mut self.holiday_seasons {
             //Check start and end dates before parsing to naivedates
-            if re.is_match(&holidayseason.start_date) && re.is_match(&holidayseason.end_date) {
-                if NaiveDate::parse_from_str(&holidayseason.start_date, "%d/%m/%Y").unwrap()
+            if re.is_match(&holidayseason.start_date)
+                && re.is_match(&holidayseason.end_date)
+                && NaiveDate::parse_from_str(&holidayseason.start_date, "%d/%m/%Y").unwrap()
                     > NaiveDate::parse_from_str(&holidayseason.end_date, "%d/%m/%Y").unwrap()
-                {
-                    //Correct start date to be a year earlier
-                    let yearnow = Local::now().year();
-                    holidayseason.start_date = holidayseason
-                        .start_date
-                        .trim_end_matches(&yearnow.to_string())
-                        .to_string();
-                    holidayseason.start_date += &(yearnow + -1).to_string();
-                }
+            {
+                //Correct start date to be a year earlier
+                let yearnow = Local::now().year();
+                holidayseason.start_date = holidayseason
+                    .start_date
+                    .trim_end_matches(&yearnow.to_string())
+                    .to_string();
+                holidayseason.start_date += &(yearnow + -1).to_string();
             }
         }
 

@@ -2,7 +2,6 @@ use super::conf;
 use super::reminder_howler::HowlerUpdatePacket;
 use chrono::prelude::*;
 use rust_gpiozero::*;
-use std;
 use std::sync::mpsc;
 use std::thread::sleep;
 
@@ -37,7 +36,7 @@ pub fn start(user_id: u8, holiday: bool, tx_howler: mpsc::Sender<HowlerUpdatePac
             tx_button
                 .send(HowlerUpdatePacket {
                     job: super::reminder_howler::UpdateCommand::Set,
-                    user_id: user_id,
+                    user_id,
                     reminder_label: String::new(),
                 })
                 .unwrap();
@@ -87,19 +86,23 @@ pub fn start(user_id: u8, holiday: bool, tx_howler: mpsc::Sender<HowlerUpdatePac
             let reminder_label = rem.label.clone();
             std::thread::spawn(move || {
                 //Set the active reminder to this reminder and disable audio
-                tx_grace_period.send(HowlerUpdatePacket {
-                    job: super::reminder_howler::UpdateCommand::Set,
-                    user_id: user_id,
-                    reminder_label: reminder_label.clone(),
-                }).unwrap();
+                tx_grace_period
+                    .send(HowlerUpdatePacket {
+                        job: super::reminder_howler::UpdateCommand::Set,
+                        user_id,
+                        reminder_label: reminder_label.clone(),
+                    })
+                    .unwrap();
                 //Sleep for the duration of the grace period
                 sleep(std::time::Duration::new(grace_period, 0));
                 //Enable the audio for this reminder if it is still the active reminder
-                tx_grace_period.send(HowlerUpdatePacket {
-                    job: super::reminder_howler::UpdateCommand::Enable,
-                    user_id: user_id,
-                    reminder_label: reminder_label.clone(),
-                }).unwrap();
+                tx_grace_period
+                    .send(HowlerUpdatePacket {
+                        job: super::reminder_howler::UpdateCommand::Enable,
+                        user_id,
+                        reminder_label: reminder_label.clone(),
+                    })
+                    .unwrap();
             });
         }
     }

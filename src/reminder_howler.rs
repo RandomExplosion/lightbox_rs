@@ -2,7 +2,6 @@ use std::fs::File;
 use std::io::BufReader;
 use std::sync::mpsc;
 use std::thread::sleep;
-use Default;
 
 //Packet task enum (see HowlerUpdatePacket) for purpose
 #[derive(PartialEq)]
@@ -86,7 +85,7 @@ pub fn start_howler(
         //TODO: Play sounds in sink
         sink.play();
         sink.sleep_until_end();
-        
+
         //Sleep for designated time then rinse and repeat
         sleep(std::time::Duration::from_secs(howl_interval.into()));
     }

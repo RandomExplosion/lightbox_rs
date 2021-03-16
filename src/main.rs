@@ -1,5 +1,4 @@
 use chrono::prelude::*;
-use pretty_env_logger;
 use std::env;
 use std::fs;
 use std::process::Command;
@@ -29,10 +28,8 @@ fn main() {
 
     loop {
         //Create the folder for the tts audio files
-        if fs::metadata("remindersounds").is_ok() {
-            if fs::create_dir("remindersounds").is_err() {
-                panic!("HOST: Insufficient permissions to manipulate tts sound files! Try running the program with sudo.");
-            }
+        if fs::metadata("remindersounds").is_ok() && fs::create_dir("remindersounds").is_err() {
+            panic!("HOST: Insufficient permissions to manipulate tts sound files! Try running the program with sudo.");
         }
 
         //while true {
@@ -42,15 +39,13 @@ fn main() {
         //Start Howler with message link for reminder_handler --> howler communication
         let (tx_reminder_handler_sender, rx_howler_listener) = mpsc::channel();
         let howl_interval = conf::CONFIG.howler_interval;
-        let user_count: usize = conf::CONFIG.users.len().into();
+        let user_count = conf::CONFIG.users.len();
         thread::spawn(move || {
             reminder_howler::start_howler(rx_howler_listener, howl_interval, user_count);
         });
 
-        let mut i = 0;
-
         //TODO: Run tts conversions for today's reminders WITHIN RUST
-        for user in &conf::CONFIG.users {
+        for (i, user) in conf::CONFIG.users.iter().enumerate() {
             //Declare binding for today's reminders
             let reminders_today;
 
@@ -66,7 +61,8 @@ fn main() {
                 //TODO: CONVERT USING RUST
                 //NOTE: This is a janky workaround using python because I can't get any of the rust bindings to work on ARM64 for the time being
                 Command::new("sh").args(&[
-                    "python3",
+                    "python3", 
+                    "./src/ttsjank.py",
                     &conf::CONFIG.tts_lan,
                     //Use vocal_reminder if present, fall back to label if not
                     match &reminder.vocal_reminder {
@@ -80,10 +76,8 @@ fn main() {
             //TODO: Launch worker thread
             let this_tx_reminder_handler = tx_reminder_handler_sender.clone();
             thread::spawn(move || {
-                user_reminder_handler::start(i, is_h, this_tx_reminder_handler);
+                user_reminder_handler::start(i as u8, is_h, this_tx_reminder_handler);
             });
-
-            i = i + 1;
         }
 
         //Sleep until the next day (0:00)
@@ -115,7 +109,7 @@ fn is_holiday() -> bool {
     if conf::CONFIG
         .public_holidays
         .iter()
-        .any(|day| &day.date == &now.format("%d/%m").to_string())
+        .any(|day| day.date == now.format("%d/%m").to_string())
     {
         info!("Today is a public holiday!\nUsing holiday reminders.");
     }
@@ -138,5 +132,5 @@ fn is_holiday() -> bool {
         }
     }
 
-    return false;
+    false
 }

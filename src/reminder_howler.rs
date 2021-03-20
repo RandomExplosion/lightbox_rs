@@ -2,6 +2,7 @@ use std::fs::File;
 use std::io::BufReader;
 use std::sync::mpsc;
 use std::thread::sleep;
+use rodio::Sink;
 
 //Packet task enum (see HowlerUpdatePacket) for purpose
 #[derive(PartialEq)]
@@ -38,8 +39,10 @@ pub fn start_howler(
 ) {
     info!("HOWLER: Starting Howler!");
     info!("HOWLER: Initialising audio sink...");
-    let (_stream, stream_handle) = rodio::OutputStream::try_default().unwrap();
-    let sink = rodio::Sink::try_new(&stream_handle).unwrap();
+    // let (_stream, stream_handle) = rodio::OutputStream::try_default().unwrap();
+    // let sink = rodio::Sink::try_new(&stream_handle).unwrap();
+    let device = rodio::default_output_device().unwrap();
+    let sink = Sink::new(&device);
     info!("HOWLER: Sink Initialised!");
     info!(
         "HOWLER: Starting Playback Loop with interim delay of {}s",

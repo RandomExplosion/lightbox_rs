@@ -1,8 +1,9 @@
 use chrono::prelude::*;
+use lazy_static::lazy_static;
 use std::env;
 use std::fs;
 use std::process::Command;
-use std::sync::mpsc;
+use std::sync::{mpsc, Arc, Condvar, Mutex};
 use std::thread;
 use std::thread::sleep;
 
@@ -12,7 +13,12 @@ mod user_reminder_handler;
 
 #[macro_use]
 extern crate log;
-
+lazy_static! {
+    static ref THREAD_HANDLES: std::sync::RwLock<Vec<Option<thread::JoinHandle<()>>>> = std::sync::RwLock::new(std::iter::repeat_with(|| None).take(conf::CONFIG.users.len()).collect()); 
+    // pub static ref KILL_CODE: Vec<std::thread::JoinHandle<()>> = Vec::new().resize(conf::CONFIG.users.len(), std::thread::JoinHandle<()>);
+    //CONDVAR STUFF!!!
+    pub static ref KILL_CODE: Arc<(Mutex<bool>, Condvar)> = Arc::new((Mutex::new(false), Condvar::new()));
+}
 fn main() {
     env::set_var(
         "RUST_LOG",
@@ -29,7 +35,7 @@ fn main() {
     loop {
         //Create the folder for the tts audio files
         if fs::metadata("remindersounds").is_ok() && fs::create_dir("remindersounds").is_err() {
-            panic!("HOST: Insufficient permissions to manipulate tts sound files! Try running the program with sudo.");
+            panic!("HOST: Insufficient permissions to create audio folder! Ensure this user has permissions to create files in this directory");
         }
 
         //while true {
@@ -40,9 +46,11 @@ fn main() {
         let (tx_reminder_handler_sender, rx_howler_listener) = mpsc::channel();
         let howl_interval = conf::CONFIG.howler_interval;
         let user_count = conf::CONFIG.users.len();
-        thread::spawn(move || {
-            reminder_howler::start_howler(rx_howler_listener, howl_interval, user_count);
-        });
+        {
+            THREAD_HANDLES.write().unwrap().push(Some(thread::spawn(move || {
+                reminder_howler::start_howler(rx_howler_listener, howl_interval, user_count);
+            })));
+        }   
 
         //TODO: Run tts conversions for today's reminders WITHIN RUST
         for (i, user) in conf::CONFIG.users.iter().enumerate() {
@@ -61,7 +69,7 @@ fn main() {
                 //TODO: CONVERT USING RUST
                 //NOTE: This is a janky workaround using python because I can't get any of the rust bindings to work on ARM64 for the time being
                 Command::new("sh").args(&[
-                    "python3", 
+                    "python3",
                     "./src/ttsjank.py",
                     &conf::CONFIG.tts_lan,
                     //Use vocal_reminder if present, fall back to label if not
@@ -75,9 +83,11 @@ fn main() {
 
             //TODO: Launch worker thread
             let this_tx_reminder_handler = tx_reminder_handler_sender.clone();
-            thread::spawn(move || {
-                user_reminder_handler::start(i as u8, is_h, this_tx_reminder_handler);
-            });
+            {
+                THREAD_HANDLES.write().unwrap().push(Some(thread::spawn(move || {
+                    user_reminder_handler::start(i as u8, is_h, this_tx_reminder_handler);
+                })));
+            }
         }
 
         //Sleep until the next day (0:00)
@@ -91,19 +101,27 @@ fn main() {
         let time_until_next_day = next_day.signed_duration_since(now).to_std().unwrap();
         //Sleep until the next day
         sleep(time_until_next_day);
-    }
-}
 
-//Figure out if today is a holiday
+        //Kill all the threads if they haven't left already
+        let mut kill_mutex = KILL_CODE.0.lock().unwrap();
+        *kill_mutex = true;
+        //Notify threads
+        KILL_CODE.1.notify_all();
+        //Join them to make sure they are dead
+        let mut handles = THREAD_HANDLES.write().unwrap();
+        for i in 0..handles.len() {
+            match handles.remove(i) {
+                Some(h) => h.join().unwrap(),
+                None => continue
+            }
+        }
+    }
+} 
+
+    //Figure out if today is a holiday
 fn is_holiday() -> bool {
     //Get current date and time
-    let now = Local::now();
-
-    //Is today a weekend?
-    if now.format("%a").to_string() == "Sat" || now.format("%a").to_string() == "Sun" {
-        info!("Today is a weekend!\n Using holiday reminders.");
-        return true;
-    }
+        let now = Local::now();
 
     //Is today a public holiday
     if conf::CONFIG

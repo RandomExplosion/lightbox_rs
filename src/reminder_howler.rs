@@ -1,8 +1,8 @@
+use rodio::Sink;
 use std::fs::File;
 use std::io::BufReader;
-use std::sync::mpsc;
-use std::thread::sleep;
-use rodio::Sink;
+use std::sync::{ mpsc, Arc };
+use crate::KILL_CODE;
 
 //Packet task enum (see HowlerUpdatePacket) for purpose
 #[derive(PartialEq)]
@@ -37,6 +37,9 @@ pub fn start_howler(
     howl_interval: u32,
     user_count: usize,
 ) {
+    //Get the killcode mutex and condvar
+    let (kill_lock, kill_condvar) = &*Arc::clone(&KILL_CODE);
+
     info!("HOWLER: Starting Howler!");
     info!("HOWLER: Initialising audio sink...");
     // let (_stream, stream_handle) = rodio::OutputStream::try_default().unwrap();
@@ -89,7 +92,8 @@ pub fn start_howler(
         sink.play();
         sink.sleep_until_end();
 
-        //Sleep for designated time then rinse and repeat
-        sleep(std::time::Duration::from_secs(howl_interval.into()));
+        //Sleep for designated time then rinse and repeat (unless woken to quit the program)
+        let _ = kill_condvar.wait_timeout(kill_lock.lock().unwrap(), std::time::Duration::from_secs(howl_interval.into()));
+        
     }
 }
